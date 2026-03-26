@@ -11,6 +11,20 @@ export const createCandidate = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllCandidates = async (req: Request, res: Response) => {
+  try {
+    const candidates = await Candidate.find({ isDeleted: false })
+      .sort({ createdAt: -1 }); // Tri du plus récent au plus ancien
+    
+    res.json({
+      count: candidates.length,
+      candidates
+    });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 export const getCandidate = async (req: Request, res: Response) => {
   const candidate = await Candidate.findById(req.params.id);
   res.json(candidate);
