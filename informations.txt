@@ -1,0 +1,56 @@
+Backend dependences:
+
+# Core
+npm install express mongoose dotenv cors
+
+# Auth & security
+npm install jsonwebtoken bcrypt express-rate-limit
+
+# Validation
+npm install zod
+
+# Logs
+npm install pino pino-http
+
+# Dev
+npm install -D typescript ts-node @types/node @types/express @types/jsonwebtoken
+
+tsconfig:
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true
+  }
+}
+
+
+src/
+│
+├── config/
+│   └── db.ts
+│
+├── models/
+│   └── candidate.model.ts
+│
+├── routes/
+│   └── candidate.routes.ts
+│
+├── controllers/
+│   └── candidate.controller.ts
+│
+├── middlewares/
+│   ├── auth.middleware.ts
+│   ├── rateLimit.middleware.ts
+│   └── validate.middleware.ts
+│
+├── validators/
+│   └── candidate.validator.ts
+│
+├── utils/
+│   └── logger.ts
+│
+└── app.ts
