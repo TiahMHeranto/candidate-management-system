@@ -79,7 +79,6 @@ const CandidateSchema = new Schema<ICandidate>(
 );
 
 // Index pour améliorer les performances des requêtes
-CandidateSchema.index({ email: 1 });
 CandidateSchema.index({ status: 1 });
 CandidateSchema.index({ isDeleted: 1 });
 

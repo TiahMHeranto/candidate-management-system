@@ -6,6 +6,7 @@ import {
   updateCandidate,
   deleteCandidate,
   validateCandidate,
+  getAllCandidates,
 } from "../controllers/candidateController";
 import { protect } from "../middlewares/authMiddleware";
 import { limiter } from "../middlewares/rateLimiter";
@@ -36,6 +37,7 @@ router.use(protect);
 router.use(limiter);
 
 // Routes avec validation
+router.get("/", getAllCandidates);
 router.post("/", validate(createCandidateSchema), createCandidate);
 router.get("/:id", validateRequest({ params: idParamSchema }), getCandidate);
 router.put("/:id", validateRequest({ 
