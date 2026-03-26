@@ -25,16 +25,16 @@ const CandidateSchema = new Schema<ICandidate>(
     email: {
       type: String,
       required: [true, "L'email est requis"],
-      unique: true,
+      unique: [true, "Cet email est déjà utilisé"],
       trim: true,
       lowercase: true,
-      match: [/^\S+@\S+\.\S+$/, "Veuillez fournir un email valide"],
+      match: [/^\S+@\S+\.\S+$/, "Veuillez fournir un email valide (exemple: nom@domaine.com)"],
     },
     phone: {
       type: String,
       required: [true, "Le numéro de téléphone est requis"],
       trim: true,
-      match: [/^[0-9+\-\s]{10,}$/, "Veuillez fournir un numéro de téléphone valide"],
+      match: [/^[0-9+\-\s]{10,}$/, "Veuillez fournir un numéro de téléphone valide (chiffres, espaces, tirets, + acceptés)"],
     },
     position: {
       type: String,
@@ -53,14 +53,14 @@ const CandidateSchema = new Schema<ICandidate>(
       required: [true, "Au moins une compétence est requise"],
       validate: {
         validator: (v: string[]) => v.length > 0,
-        message: "Au moins une compétence est requise",
+        message: "Ajoutez au moins une compétence",
       },
     },
     status: {
       type: String,
       enum: {
         values: ["pending", "validated"],
-        message: "Le statut doit être 'pending' ou 'validated'",
+        message: "Le statut doit être 'pending' (en attente) ou 'validated' (validé)",
       },
       default: "pending",
     },
