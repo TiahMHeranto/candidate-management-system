@@ -1,8 +1,9 @@
 // src/routes/authRoutes.ts
 import { Router } from "express";
-import { login, register } from "../controllers/authController";
+import { login, register, getUser } from "../controllers/authController";
 import { validate } from "../middlewares/validation";
 import { strictLimiter } from "../middlewares/rateLimiter";
+import { protect } from "../middlewares/authMiddleware";
 import { z } from "zod";
 
 const router = Router();
@@ -22,4 +23,10 @@ const loginSchema = z.object({
 router.post("/register", strictLimiter, validate(registerSchema), register);
 router.post("/login", strictLimiter, validate(loginSchema), login);
 
+// Route protégée pour récupérer le profil
+router.get("/profile", protect, getUser);
+
 export default router;
+
+
+
