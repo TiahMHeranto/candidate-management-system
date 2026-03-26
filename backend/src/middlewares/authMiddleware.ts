@@ -2,16 +2,28 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-export const protect = (req: any, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(" ")[1];
+export interface AuthRequest extends Request {
+  user?: any;
+}
 
-  if (!token) return res.status(401).json({ message: "Not authorized" });
-
+export const protect = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "Non autorisé - Token manquant" });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: "Token expiré" });
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "Token invalide" });
+    }
+    return res.status(401).json({ message: "Erreur d'authentification" });
   }
 };
