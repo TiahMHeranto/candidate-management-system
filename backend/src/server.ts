@@ -15,9 +15,14 @@ connectDB();
 app.use(express.json());
 
 // Define a basic route
-app.get('/', (req: Request, res: Response) => {
-  res.send('Hello, TypeScript + Express Server!');
-});
+import authRoutes from "./routes/authRoutes";
+import candidateRoutes from "./routes/candidateRoutes";
+import { limiter } from "./middlewares/rateLimiter";
+
+app.use(limiter);
+
+app.use("/api/auth", authRoutes);
+app.use("/api/candidates", candidateRoutes);
 
 // Start the server
 app.listen(PORT, () => {
