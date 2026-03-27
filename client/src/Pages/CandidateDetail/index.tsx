@@ -1,7 +1,10 @@
 // src/Pages/CandidateDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Briefcase, Star, CheckCircle, Award } from 'lucide-react';
+import { 
+  ArrowLeft, Mail, Phone, Briefcase, Star, CheckCircle, Award, 
+  Edit2, Trash2, AlertCircle 
+} from 'lucide-react'; // Ajouter Edit2, Trash2, AlertCircle
 import api from '../../lib/axios';
 import type { Candidate } from '../../types';
 import { Header } from '../../components/Header';
@@ -12,6 +15,7 @@ export const CandidateDetail = () => {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
+  const [deleting, setDeleting] = useState(false); // Ajouter état pour suppression
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,12 +43,35 @@ export const CandidateDetail = () => {
     try {
       await api.post(`/api/candidates/${id}/validate`);
       await fetchCandidate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la validation', error);
-      setError('Erreur lors de la validation du candidat');
+      setError(error.response?.data?.message || 'Erreur lors de la validation du candidat');
     } finally {
       setValidating(false);
     }
+  };
+
+  // Ajouter la fonction de suppression
+  const handleDelete = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce candidat ? Cette action est irréversible.')) return;
+    
+    setDeleting(true);
+    setError(null);
+    
+    try {
+      await api.delete(`/api/candidates/${id}`);
+      // Rediriger vers la liste des candidats
+      navigate('/candidates');
+    } catch (error: any) {
+      console.error('Erreur lors de la suppression', error);
+      setError(error.response?.data?.message || 'Erreur lors de la suppression du candidat');
+      setDeleting(false);
+    }
+  };
+
+  // Ajouter la fonction pour éditer
+  const handleEdit = () => {
+    navigate(`/candidates/${id}/edit`);
   };
 
   if (loading) {
@@ -96,8 +123,9 @@ export const CandidateDetail = () => {
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800
-                        rounded-md text-red-600 dark:text-red-400">
-            {error}
+                        rounded-md text-red-600 dark:text-red-400 flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -105,7 +133,7 @@ export const CandidateDetail = () => {
                        border border-light-border dark:border-dark-border
                        rounded-lg overflow-hidden">
           <div className="p-6 border-b border-light-border dark:border-dark-border">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start flex-wrap gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">
                   {candidate.name}
@@ -116,35 +144,72 @@ export const CandidateDetail = () => {
                       ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                       : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
                   }`}>
-                    {candidate.status === 'validated' ? 'Validé' : 'En attente de validation'}
+                    {candidate.status === 'validated' ? '✓ Validé' : '⏳ En attente'}
                   </span>
                 </div>
               </div>
-              {candidate.status === 'pending' && (
+              
+              <div className="flex gap-3">
+                {candidate.status === 'pending' && (
+                  <button
+                    onClick={handleValidate}
+                    disabled={validating}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700
+                             text-white rounded-md font-medium
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-colors duration-200 flex items-center gap-2"
+                  >
+                    {validating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Validation...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        Valider
+                      </>
+                    )}
+                  </button>
+                )}
+                
+                {/* Bouton Modifier */}
                 <button
-                  onClick={handleValidate}
-                  disabled={validating}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700
+                  onClick={handleEdit}
+                  className="px-4 py-2 bg-orange-500 hover:bg-orange-600
+                           text-white rounded-md font-medium
+                           transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  Modifier
+                </button>
+                
+                {/* Bouton Supprimer */}
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700
                            text-white rounded-md font-medium
                            disabled:opacity-50 disabled:cursor-not-allowed
                            transition-colors duration-200 flex items-center gap-2"
                 >
-                  {validating ? (
+                  {deleting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Validation...
+                      Suppression...
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="h-4 w-4" />
-                      Valider le candidat
+                      <Trash2 className="h-4 w-4" />
+                      Supprimer
                     </>
                   )}
                 </button>
-              )}
+              </div>
             </div>
           </div>
 
+          {/* Reste du code de l'affichage du candidat identique */}
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">

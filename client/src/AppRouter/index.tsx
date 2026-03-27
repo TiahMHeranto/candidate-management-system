@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Login } from "../Pages/AuthenticationPage";
 import { Candidates } from "../Pages/Candidates";
 import { CandidateDetail } from "../Pages/CandidateDetail";
+import { CandidateCreate } from "../Pages/CandidateCreate";
+import { CandidateEdit } from "../Pages/CandidateEdit";
 
 // Protection des routes
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -24,10 +26,26 @@ const AppRouter = () => {
           }
         />
         <Route
+          path="/candidates/create"
+          element={
+            <PrivateRoute>
+              <CandidateCreate />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/candidates/:id"
           element={
             <PrivateRoute>
               <CandidateDetail />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/candidates/:id/edit"
+          element={
+            <PrivateRoute>
+              <CandidateEdit />
             </PrivateRoute>
           }
         />
