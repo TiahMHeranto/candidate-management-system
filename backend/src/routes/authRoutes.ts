@@ -20,7 +20,7 @@ const loginSchema = z.object({
 });
 
 // Routes avec rate limiting strict (5 tentatives max)
-router.post("/register", strictLimiter, validate(registerSchema), register);
+router.post("/register", strictLimiter, register);
 router.post("/login", strictLimiter, validate(loginSchema), login);
 
 // Route protégée pour récupérer le profil

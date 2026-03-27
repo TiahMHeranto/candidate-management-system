@@ -2,28 +2,27 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodSchema, ZodError } from "zod";
 
-export const validate = (schema: ZodSchema<any>) =>
+export const validate =
+  (schema: ZodSchema<any>) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      const validatedData = schema.parse(req.body);
-      req.body = validatedData;
-      next();
-    } catch (err: any) {
-      if (err instanceof ZodError) {
-        // La propriété correcte est 'issues' pas 'errors'
-        const formattedErrors = err.issues.map((issue) => ({
-          field: issue.path.join("."),
-          message: issue.message,
-        }));
-        
+      const result = schema.safeParse(req.body);
+
+      if (!result.success) {
         return res.status(400).json({
           message: "Erreur de validation",
-          errors: formattedErrors,
+          errors: result.error.issues.map((issue) => ({
+            field: issue.path.join("."),
+            message: issue.message,
+          })),
         });
       }
-      
-      return res.status(500).json({ 
-        message: "Erreur lors de la validation" 
+
+      req.body = result.data;
+      next();
+    } catch {
+      return res.status(500).json({
+        message: "Erreur lors de la validation",
       });
     }
   };
