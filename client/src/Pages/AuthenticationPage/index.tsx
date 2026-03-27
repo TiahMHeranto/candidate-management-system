@@ -1,129 +1,10 @@
-// src/pages/Login.tsx
 import { useState } from 'react';
-import axios, { AxiosError } from 'axios';
 import { Eye, EyeOff, AlertCircle, Lock, Mail } from 'lucide-react';
-
-interface ErrorResponse {
-  message: string;
-}
+import { useLogin } from '../../hooks/useLogin';
 
 export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [errors, setErrors] = useState({
-    email: '',
-    password: '',
-  });
-
-  // Validation simple côté client
-  const validateForm = () => {
-    const newErrors = { email: '', password: '' };
-    let isValid = true;
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'L\'email est requis';
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Format d\'email invalide';
-      isValid = false;
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Le mot de passe est requis';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Effacer l'erreur du champ quand l'utilisateur tape
-    if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-    // Effacer l'erreur serveur quand l'utilisateur tape
-    if (serverError) {
-      setServerError(null);
-    }
-  };
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-    if (isLoading) return;
-
-    setIsLoading(true);
-    setServerError(null);
-
-    try {
-      const response = await axios.post(
-        'http://localhost:3000/api/auth/login',
-        {
-          email: formData.email.toLowerCase().trim(),
-          password: formData.password,
-        },
-        {
-          timeout: 10000,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const { token } = response.data;
-      localStorage.setItem('authToken', token);
-
-      // Redirection
-      window.location.href = '/candidates';
-
-    } catch (error) {
-      const axiosError = error as AxiosError<ErrorResponse>;
-
-      // Gestion des erreurs avec les messages du serveur
-      if (axiosError.code === 'ECONNABORTED') {
-        setServerError('Le serveur ne répond pas. Veuillez réessayer.');
-      } else if (axiosError.response?.status === 401) {
-        // Utiliser le message du serveur pour 401
-        const serverMessage = axiosError.response.data?.message;
-        if (serverMessage) {
-          setServerError(serverMessage);
-        } else {
-          setServerError('Email ou mot de passe incorrect');
-        }
-      } else if (axiosError.response?.status === 404) {
-        // Utiliser le message du serveur pour 404
-        const serverMessage = axiosError.response.data?.message;
-        setServerError(serverMessage || 'Aucun compte associé à cet email');
-      } else if (axiosError.response?.status === 429) {
-        setServerError('Trop de tentatives. Veuillez réessayer plus tard.');
-      } else if (axiosError.response?.status === 500) {
-        setServerError('Erreur serveur. Veuillez réessayer plus tard.');
-      } else if (axiosError.response?.data?.message) {
-        // Pour toute autre erreur avec message du serveur
-        setServerError(axiosError.response.data.message);
-      } else {
-        setServerError('Une erreur est survenue. Veuillez réessayer.');
-      }
-
-      // Log pour débogage
-      console.error('Login error:', {
-        status: axiosError.response?.status,
-        message: axiosError.response?.data?.message,
-        error: axiosError.message
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { formData, errors, serverError, isLoading, handleChange, onSubmit } = useLogin();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-light-bg dark:bg-dark-bg p-4">
@@ -214,9 +95,10 @@ export const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                 </button>
               </div>
               {errors.password && (
