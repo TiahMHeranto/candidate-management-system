@@ -1,16 +1,19 @@
 services:
   - type: web
-    name: node-express-api
+    name: candidate-api
     env: docker
     plan: free
     autoDeploy: true
+
+    dockerfilePath: ./backend/Dockerfile
+    rootDir: ./backend
 
     envVars:
       - key: NODE_ENV
         value: production
 
       - key: MONGO_URI
-        sync: false   # set manually in dashboard (secure)
+        sync: false
 
       - key: JWT_SECRET
         sync: false
