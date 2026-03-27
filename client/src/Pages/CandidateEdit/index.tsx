@@ -10,8 +10,7 @@ import {
   Mail,
   Phone,
   Briefcase,
-  Calendar,
-  Code
+  Calendar
 } from 'lucide-react';
 import api from '../../lib/axios';
 import { Header } from '../../components/Header';

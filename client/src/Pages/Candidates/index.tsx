@@ -6,7 +6,6 @@ import api from '../../lib/axios';
 import type { Candidate } from '../../types';
 import { CandidateCard } from '../../components/CandidateCard';
 import { CandidateCardSkeleton } from '../../components/CandidateCardSkeleton';
-import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { Pagination } from '../../components/Pagination';
 import { Header } from '../../components/Header';
 
