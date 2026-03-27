@@ -78,8 +78,4 @@ const CandidateSchema = new Schema<ICandidate>(
   }
 );
 
-// Index pour améliorer les performances des requêtes
-CandidateSchema.index({ status: 1 });
-CandidateSchema.index({ isDeleted: 1 });
-
 export default mongoose.model<ICandidate>("Candidate", CandidateSchema);
