@@ -43,5 +43,10 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  }
+  },
+  "exclude": [
+    "vitest.config.ts",
+    "jest.config.ts",
+    "node_modules"
+  ]
 }
