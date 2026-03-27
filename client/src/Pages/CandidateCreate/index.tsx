@@ -41,11 +41,10 @@ export const CandidateCreate = () => {
     setServerError(null);
 
     try {
-      // Transformer les compétences en tableau
       const skillsArray = data.skills
         .split(',')
         .map(skill => skill.trim())
-        .filter(skill => skill);
+        .filter(Boolean);
 
       const candidateData = {
         ...data,
@@ -54,25 +53,22 @@ export const CandidateCreate = () => {
       };
 
       const response = await api.post('/api/candidates', candidateData);
-      
-      // Rediriger vers la page du candidat créé
+
       navigate(`/candidates/${response.data._id}`);
     } catch (error: any) {
       console.error('Erreur lors de la création', error);
-      
-      // Gérer les erreurs du serveur
-      if (error.response?.data?.message) {
-        const serverMessage = error.response.data.message;
-        
-        // Vérifier si c'est une erreur de validation spécifique
-        if (serverMessage.includes('email')) {
-          setError('email', { message: serverMessage });
-        } else if (serverMessage.includes('phone')) {
-          setError('phone', { message: serverMessage });
-        } else if (serverMessage.includes('compétence')) {
-          setError('skills', { message: serverMessage });
+
+      const message = error.response?.data?.message;
+
+      if (message) {
+        if (message.includes('email')) {
+          setError('email', { message });
+        } else if (message.includes('phone')) {
+          setError('phone', { message });
+        } else if (message.includes('compétence')) {
+          setError('skills', { message });
         } else {
-          setServerError(serverMessage);
+          setServerError(message);
         }
       } else {
         setServerError('Une erreur est survenue lors de la création du candidat');
@@ -85,7 +81,7 @@ export const CandidateCreate = () => {
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
       <Header />
-      
+
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
           onClick={() => navigate('/candidates')}
@@ -99,6 +95,7 @@ export const CandidateCreate = () => {
         <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary
                        border border-light-border dark:border-dark-border
                        rounded-lg overflow-hidden">
+
           <div className="p-6 border-b border-light-border dark:border-dark-border">
             <h1 className="text-2xl font-bold text-light-text dark:text-dark-text">
               Nouveau candidat
@@ -117,258 +114,124 @@ export const CandidateCreate = () => {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+
             {/* Nom */}
             <div>
-              <label className="block text-sm font-medium text-light-text dark:text-dark-text mb-2">
-                Nom complet *
-              </label>
+              <label className="block text-sm font-medium mb-2">Nom complet *</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
+                <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
-                  type="text"
                   {...register('name', {
                     required: 'Le nom est requis',
-                    minLength: {
-                      value: 2,
-                      message: 'Le nom doit contenir au moins 2 caractères',
-                    },
-                    maxLength: {
-                      value: 100,
-                      message: 'Le nom ne peut pas dépasser 100 caractères',
-                    },
+                    minLength: { value: 2, message: 'Minimum 2 caractères' },
                   })}
                   className={`w-full pl-10 pr-3 py-2 border rounded-md
-                             bg-light-bg dark:bg-dark-bg
-                             text-light-text dark:text-dark-text
-                             focus:outline-none focus:ring-2 focus:ring-gray-400
-                             ${errors.name 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                    ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.name.message}
-                </p>
-              )}
+              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-light-text dark:text-dark-text mb-2">
-                Email *
-              </label>
+              <label className="block text-sm font-medium mb-2">Email *</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
+                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
                   type="email"
                   {...register('email', {
-                    required: 'L\'email est requis',
+                    required: 'Email requis',
                     pattern: {
                       value: /^\S+@\S+\.\S+$/,
-                      message: 'Veuillez fournir un email valide (exemple: nom@domaine.com)',
+                      message: 'Email invalide',
                     },
                   })}
                   className={`w-full pl-10 pr-3 py-2 border rounded-md
-                             bg-light-bg dark:bg-dark-bg
-                             text-light-text dark:text-dark-text
-                             focus:outline-none focus:ring-2 focus:ring-gray-400
-                             ${errors.email 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                    ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.email.message}
-                </p>
-              )}
+              {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
             </div>
 
             {/* Téléphone */}
             <div>
-              <label className="block text-sm font-medium text-light-text dark:text-dark-text mb-2">
-                Téléphone *
-              </label>
+              <label className="block text-sm font-medium mb-2">Téléphone *</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
+                <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
-                  type="tel"
                   {...register('phone', {
-                    required: 'Le numéro de téléphone est requis',
-                    pattern: {
-                      value: /^[0-9+\-\s]{10,}$/,
-                      message: 'Veuillez fournir un numéro de téléphone valide (chiffres, espaces, tirets, + acceptés)',
-                    },
+                    required: 'Téléphone requis',
                   })}
                   className={`w-full pl-10 pr-3 py-2 border rounded-md
-                             bg-light-bg dark:bg-dark-bg
-                             text-light-text dark:text-dark-text
-                             focus:outline-none focus:ring-2 focus:ring-gray-400
-                             ${errors.phone 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                    ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.phone.message}
-                </p>
-              )}
+              {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
             </div>
 
             {/* Poste */}
             <div>
-              <label className="block text-sm font-medium text-light-text dark:text-dark-text mb-2">
-                Poste *
-              </label>
+              <label className="block text-sm font-medium mb-2">Poste *</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Briefcase className="h-5 w-5 text-gray-400" />
-                </div>
+                <Briefcase className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
-                  type="text"
                   {...register('position', {
-                    required: 'Le poste est requis',
-                    minLength: {
-                      value: 2,
-                      message: 'Le poste doit contenir au moins 2 caractères',
-                    },
+                    required: 'Poste requis',
                   })}
                   className={`w-full pl-10 pr-3 py-2 border rounded-md
-                             bg-light-bg dark:bg-dark-bg
-                             text-light-text dark:text-dark-text
-                             focus:outline-none focus:ring-2 focus:ring-gray-400
-                             ${errors.position 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                    ${errors.position ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
-              {errors.position && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.position.message}
-                </p>
-              )}
+              {errors.position && <p className="text-red-500 text-sm">{errors.position.message}</p>}
             </div>
 
             {/* Expérience */}
             <div>
-              <label className="block text-sm font-medium text-light-text dark:text-dark-text mb-2">
-                Années d'expérience *
-              </label>
+              <label className="block text-sm font-medium mb-2">Expérience *</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Calendar className="h-5 w-5 text-gray-400" />
-                </div>
+                <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <input
                   type="number"
-                  {...register('experience', {
-                    required: 'Les années d\'expérience sont requises',
-                    min: {
-                      value: 0,
-                      message: 'L\'expérience ne peut pas être négative',
-                    },
-                    max: {
-                      value: 50,
-                      message: 'L\'expérience ne peut pas dépasser 50 ans',
-                    },
-                    valueAsNumber: true,
-                  })}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-md
-                             bg-light-bg dark:bg-dark-bg
-                             text-light-text dark:text-dark-text
-                             focus:outline-none focus:ring-2 focus:ring-gray-400
-                             ${errors.experience 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                  {...register('experience', { valueAsNumber: true })}
+                  className="w-full pl-10 pr-3 py-2 border rounded-md border-gray-300"
                 />
               </div>
-              {errors.experience && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.experience.message}
-                </p>
-              )}
             </div>
 
-            {/* Compétences */}
+            {/* Skills */}
             <div>
-              <label className="block text-sm font-medium text-light-text dark:text-dark-text mb-2">
-                Compétences * (séparées par des virgules)
-              </label>
+              <label className="block text-sm font-medium mb-2">Compétences *</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Code className="h-5 w-5 text-gray-400" />
-                </div>
+                <Code className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 <textarea
                   rows={3}
-                  {...register('skills', {
-                    required: 'Au moins une compétence est requise',
-                    validate: (value) => {
-                      const skills = value.split(',').map(s => s.trim()).filter(s => s);
-                      if (skills.length === 0) {
-                        return 'Ajoutez au moins une compétence';
-                      }
-                      return true;
-                    },
-                  })}
-                  placeholder="React, TypeScript, Node.js, ..."
+                  {...register('skills', { required: 'Compétences requises' })}
                   className={`w-full pl-10 pr-3 py-2 border rounded-md
-                             bg-light-bg dark:bg-dark-bg
-                             text-light-text dark:text-dark-text
-                             focus:outline-none focus:ring-2 focus:ring-gray-400
-                             ${errors.skills 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                    ${errors.skills ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
-              {errors.skills && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                  {errors.skills.message}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                Exemple: React, TypeScript, Node.js, MongoDB
-              </p>
             </div>
 
-            {/* Boutons */}
+            {/* Buttons */}
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
                 onClick={() => navigate('/candidates')}
-                className="px-4 py-2 border border-light-border dark:border-dark-border
-                         rounded-md text-light-text dark:text-dark-text
-                         hover:bg-gray-100 dark:hover:bg-gray-800
-                         transition-colors duration-200"
+                className="px-4 py-2 border rounded-md"
               >
                 Annuler
               </button>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-gray-900 dark:bg-gray-100
-                         text-gray-50 dark:text-gray-900
-                         hover:bg-gray-700 dark:hover:bg-gray-200
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         rounded-md font-medium transition-all duration-200
+                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-md
                          flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Création en cours...
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Création...
                   </>
                 ) : (
                   <>
@@ -378,6 +241,7 @@ export const CandidateCreate = () => {
                 )}
               </button>
             </div>
+
           </form>
         </div>
       </main>

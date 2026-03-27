@@ -1,12 +1,24 @@
-// src/Pages/CandidateDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Mail, Phone, Briefcase, Star, CheckCircle, Award, 
-  Edit2, Trash2, AlertCircle 
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Briefcase,
+  Star,
+  CheckCircle,
+  Award,
+  Edit2,
+  Trash2,
+  AlertCircle,
+  Download,
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 import api from '../../lib/axios';
 import type { Candidate } from '../../types';
+
 import { Header } from '../../components/Header';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { LoadingButton } from '../../components/LoadingButton';
@@ -15,10 +27,13 @@ import { Toast } from '../../components/Toast';
 export const CandidateDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -29,63 +44,118 @@ export const CandidateDetail = () => {
   const fetchCandidate = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const response = await api.get(`/api/candidates/${id}`);
       setCandidate(response.data);
     } catch (error: any) {
-      console.error('Erreur lors du chargement du candidat', error);
-      setError(error.response?.data?.message || 'Impossible de charger les détails du candidat');
+      setError(
+        error.response?.data?.message ||
+          'Impossible de charger les détails du candidat'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================
+  // VALIDATE
+  // =========================
   const handleValidate = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir valider ce candidat ?')) return;
-    
+    if (!confirm('Valider ce candidat ?')) return;
+
     setValidating(true);
     setError(null);
-    
+
     try {
       await api.post(`/api/candidates/${id}/validate`);
       setSuccessMessage('Candidat validé avec succès !');
-      // Attendre 2 secondes avant de recharger pour voir le message de succès
-      setTimeout(() => {
-        fetchCandidate();
-      }, 2000);
+
+      setTimeout(fetchCandidate, 1200);
     } catch (error: any) {
-      console.error('Erreur lors de la validation', error);
-      setError(error.response?.data?.message || 'Erreur lors de la validation du candidat');
+      setError(error.response?.data?.message || 'Erreur validation');
     } finally {
       setValidating(false);
     }
   };
 
+  // =========================
+  // DELETE
+  // =========================
   const handleDelete = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce candidat ? Cette action est irréversible.')) return;
-    
+    if (!confirm('Supprimer ce candidat ?')) return;
+
     setDeleting(true);
     setError(null);
-    
+
     try {
       await api.delete(`/api/candidates/${id}`);
-      setSuccessMessage('Candidat supprimé avec succès !');
-      // Rediriger après 1.5 secondes pour voir le message
-      setTimeout(() => {
-        navigate('/candidates');
-      }, 1500);
+      setSuccessMessage('Candidat supprimé !');
+
+      setTimeout(() => navigate('/candidates'), 1200);
     } catch (error: any) {
-      console.error('Erreur lors de la suppression', error);
-      setError(error.response?.data?.message || 'Erreur lors de la suppression du candidat');
+      setError(error.response?.data?.message || 'Erreur suppression');
       setDeleting(false);
     }
   };
 
+  // =========================
+  // EDIT
+  // =========================
   const handleEdit = () => {
     navigate(`/candidates/${id}/edit`);
   };
 
-  // Loading state avec spinner amélioré
+  // =========================
+  // EXPORT PDF
+  // =========================
+  const handleExportPDF = async () => {
+    const element = document.getElementById('candidate-pdf');
+    if (!element) return;
+
+    setExporting(true);
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`candidat-${candidate?.name || 'profil'}.pdf`);
+
+      setSuccessMessage('PDF exporté avec succès !');
+    } catch (err) {
+      setError("Erreur lors de l'export PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
     return (
       <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
@@ -97,27 +167,22 @@ export const CandidateDetail = () => {
     );
   }
 
-  // Error state pour candidat non trouvé
+  // =========================
+  // NOT FOUND
+  // =========================
   if (!candidate) {
     return (
       <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <div className="mb-4">
-              <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
-            </div>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary text-lg mb-4">
-              Candidat non trouvé
-            </p>
-            <button
-              onClick={() => navigate('/candidates')}
-              className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900
-                       rounded-md hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
-            >
-              Retour à la liste
-            </button>
-          </div>
+        <div className="text-center py-16">
+          <AlertCircle className="h-14 w-14 text-red-500 mx-auto mb-3" />
+          <p className="text-lg">Candidat introuvable</p>
+          <button
+            onClick={() => navigate('/candidates')}
+            className="mt-4 px-4 py-2 bg-black text-white rounded"
+          >
+            Retour
+          </button>
         </div>
       </div>
     );
@@ -126,180 +191,137 @@ export const CandidateDetail = () => {
   return (
     <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
       <Header />
-      
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Toast pour les messages de succès */}
+
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        {/* TOAST */}
         {successMessage && (
           <Toast
             message={successMessage}
             type="success"
             onClose={() => setSuccessMessage(null)}
-            duration={3000}
           />
         )}
 
+        {/* BACK */}
         <button
           onClick={() => navigate('/candidates')}
-          className="mb-6 flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary
-                   hover:text-light-text dark:hover:text-dark-text transition-colors group"
+          className="flex items-center gap-2 mb-5 text-gray-500 hover:text-black"
         >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Retour à la liste
+          <ArrowLeft size={18} />
+          Retour
         </button>
 
-        {/* Message d'erreur amélioré */}
+        {/* ERROR */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800
-                        rounded-md text-red-600 dark:text-red-400 flex items-start gap-2 animate-shake">
-            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded flex justify-between">
             <span>{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="ml-auto text-red-600 dark:text-red-400 hover:text-red-800"
-            >
-              ✕
-            </button>
+            <button onClick={() => setError(null)}>✕</button>
           </div>
         )}
 
-        <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary
-                       border border-light-border dark:border-dark-border
-                       rounded-lg overflow-hidden shadow-lg">
-          <div className="p-6 border-b border-light-border dark:border-dark-border bg-gradient-to-r from-transparent to-gray-50 dark:to-gray-900/20">
-            <div className="flex justify-between items-start flex-wrap gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-light-text dark:text-dark-text mb-2">
-                  {candidate.name}
-                </h1>
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    candidate.status === 'validated'
-                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                      : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
-                  }`}>
-                    {candidate.status === 'validated' ? '✓ Validé' : '⏳ En attente de validation'}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex gap-3">
-                {candidate.status === 'pending' && (
-                  <LoadingButton
-                    onClick={handleValidate}
-                    loading={validating}
-                    loadingText="Validation en cours..."
-                    variant="success"
-                    icon={<CheckCircle className="h-4 w-4" />}
-                  >
-                    Valider
-                  </LoadingButton>
-                )}
-                
+        {/* CARD */}
+        <div
+          id="candidate-pdf"
+          className="bg-white dark:bg-gray-900 rounded-xl shadow border p-6"
+        >
+          {/* HEADER */}
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">{candidate.name}</h1>
+
+              <span
+                className={`inline-block mt-2 px-3 py-1 text-sm rounded-full ${
+                  candidate.status === 'validated'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-yellow-100 text-yellow-700'
+                }`}
+              >
+                {candidate.status === 'validated'
+                  ? 'Validé'
+                  : 'En attente'}
+              </span>
+            </div>
+
+            {/* ACTIONS */}
+            <div className="flex gap-2 flex-wrap">
+              <LoadingButton
+                onClick={handleExportPDF}
+                loading={exporting}
+                icon={<Download size={16} />}
+              >
+                PDF
+              </LoadingButton>
+
+              {candidate.status === 'pending' && (
                 <LoadingButton
-                  onClick={handleEdit}
-                  variant="warning"
-                  icon={<Edit2 className="h-4 w-4" />}
+                  onClick={handleValidate}
+                  loading={validating}
+                  icon={<CheckCircle size={16} />}
+                  variant="success"
                 >
-                  Modifier
+                  Valider
                 </LoadingButton>
-                
-                <LoadingButton
-                  onClick={handleDelete}
-                  loading={deleting}
-                  loadingText="Suppression..."
-                  variant="danger"
-                  icon={<Trash2 className="h-4 w-4" />}
-                >
-                  Supprimer
-                </LoadingButton>
-              </div>
+              )}
+
+              <LoadingButton
+                onClick={handleEdit}
+                icon={<Edit2 size={16} />}
+                variant="warning"
+              >
+                Modifier
+              </LoadingButton>
+
+              <LoadingButton
+                onClick={handleDelete}
+                loading={deleting}
+                icon={<Trash2 size={16} />}
+                variant="danger"
+              >
+                Supprimer
+              </LoadingButton>
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                      Email
-                    </p>
-                    <p className="text-light-text dark:text-dark-text font-medium">
-                      {candidate.email}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                      Téléphone
-                    </p>
-                    <p className="text-light-text dark:text-dark-text font-medium">
-                      {candidate.phone}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <Briefcase className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                      Poste
-                    </p>
-                    <p className="text-light-text dark:text-dark-text font-medium">
-                      {candidate.position}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <Star className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                      Expérience
-                    </p>
-                    <p className="text-light-text dark:text-dark-text font-medium">
-                      {candidate.experience} {candidate.experience === 1 ? 'an' : 'ans'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <Award className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                      Date de candidature
-                    </p>
-                    <p className="text-light-text dark:text-dark-text font-medium">
-                      {new Date(candidate.createdAt).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          {/* INFOS */}
+          <div className="grid md:grid-cols-2 gap-6 mt-6">
+            <div className="space-y-3">
+              <Info icon={<Mail />} label="Email" value={candidate.email} />
+              <Info icon={<Phone />} label="Téléphone" value={candidate.phone} />
+              <Info
+                icon={<Briefcase />}
+                label="Poste"
+                value={candidate.position}
+              />
             </div>
 
-            <div className="pt-4">
-              <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-orange-500 rounded-full"></span>
-                Compétences
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {candidate.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800
-                             text-gray-700 dark:text-gray-300 text-sm font-medium
-                             hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+            <div className="space-y-3">
+              <Info
+                icon={<Star />}
+                label="Expérience"
+                value={`${candidate.experience} ans`}
+              />
+              <Info
+                icon={<Award />}
+                label="Date"
+                value={new Date(candidate.createdAt).toLocaleDateString(
+                  'fr-FR'
+                )}
+              />
+            </div>
+          </div>
+
+          {/* SKILLS */}
+          <div className="mt-6">
+            <h3 className="font-semibold mb-2">Compétences</h3>
+            <div className="flex flex-wrap gap-2">
+              {candidate.skills.map((skill, i) => (
+                <span
+                  key={i}
+                  className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded"
+                >
+                  {skill}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -307,3 +329,24 @@ export const CandidateDetail = () => {
     </div>
   );
 };
+
+// =========================
+// COMPONENT REUSABLE
+// =========================
+const Info = ({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) => (
+  <div className="flex items-center gap-3">
+    <div className="text-gray-500">{icon}</div>
+    <div>
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className="font-medium">{value}</p>
+    </div>
+  </div>
+);
