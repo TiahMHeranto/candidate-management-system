@@ -3,6 +3,33 @@ import { Request, Response } from "express";
 import Candidate from "../models/Candidate";
 import { log } from "../utils/logger";
 
+export const validateCandidateJob = async (id: string) => {
+  try {
+    // simulation délai async (comme un vrai worker)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const candidate = await Candidate.findById(id);
+
+    if (!candidate) return;
+
+    await Candidate.findByIdAndUpdate(id, {
+      status: "validated",
+    });
+
+    log("Candidate validated successfully", {
+      event: "validation_completed",
+      candidateId: id,
+      email: candidate.email,
+    });
+  } catch (err: any) {
+    log("Validation worker failed", {
+      event: "validation_error",
+      error: err.message,
+      candidateId: id,
+    });
+  }
+};
+
 export const createCandidate = async (req: Request, res: Response) => {
   try {
     const candidate = await Candidate.create(req.body);
@@ -211,76 +238,62 @@ export const deleteCandidate = async (req: Request, res: Response) => {
 export const validateCandidate = async (req: Request, res: Response) => {
   try {
     const candidate = await Candidate.findById(req.params.id);
-    
+
     if (!candidate) {
-      // Log d'avertissement - non trouvé
       log("Candidate not found for validation", {
         event: "validate_candidate_failed",
         reason: "not_found",
         candidateId: req.params.id,
-        ip: req.ip
+        ip: req.ip,
       });
-      
+
       return res.status(404).json({ message: "Candidat non trouvé" });
     }
-    
+
     if (candidate.status === "validated") {
-      // Log d'avertissement - déjà validé
       log("Candidate already validated", {
         event: "validate_candidate_failed",
         reason: "already_validated",
         candidateId: candidate._id,
         email: candidate.email,
-        ip: req.ip
+        ip: req.ip,
       });
-      
+
       return res.status(400).json({ message: "Ce candidat est déjà validé" });
     }
-    
-    // Log de démarrage de validation
-    log("Candidate validation started", {
-      event: "validation_started",
+
+    // 👉 marque "pending validation"
+    await Candidate.findByIdAndUpdate(candidate._id, {
+      status: "pending_validation",
+    });
+
+    log("Candidate validation queued", {
+      event: "validation_queued",
       candidateId: candidate._id,
       email: candidate.email,
-      ip: req.ip
+      ip: req.ip,
     });
-    
-    setTimeout(async () => {
-      try {
-        await Candidate.findByIdAndUpdate(req.params.id, {
-          status: "validated",
-        });
-        
-        // Log de succès (validation terminée)
-        log("Candidate validated successfully", {
-          event: "validation_completed",
-          candidateId: req.params.id,
-          email: candidate.email,
-          ip: req.ip
-        });
-      } catch (err: any) {
-        // Log d'erreur dans le setTimeout
-        log("Validation failed", {
-          event: "validation_error",
-          error: err.message,
-          candidateId: req.params.id,
-          email: candidate.email,
-          ip: req.ip
-        });
-      }
-    }, 2000);
-    
-    res.json({ message: "Validation en cours..." });
+
+    // 👉 envoie le job async
+    process.nextTick(() => {
+      validateCandidateJob(candidate._id.toString());
+    });
+
+    return res.json({
+      message: "Validation en cours...",
+      status: "pending",
+    });
   } catch (err: any) {
-    // Log d'erreur
     log("Failed to start validation", {
       event: "validate_candidate_error",
       error: err.message,
       stack: err.stack,
       candidateId: req.params.id,
-      ip: req.ip
+      ip: req.ip,
     });
-    
-    res.status(500).json({ message: "Erreur lors du lancement de la validation" });
+
+    return res.status(500).json({
+      message: "Erreur lors du lancement de la validation",
+    });
   }
 };
