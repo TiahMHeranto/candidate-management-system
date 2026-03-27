@@ -14,7 +14,7 @@ export const Candidates = () => {
   const navigate = useNavigate();
   const [allCandidates, setAllCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // Pour les refresh manuels
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
@@ -23,6 +23,7 @@ export const Candidates = () => {
     position: '',
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const itemsPerPage = 9;
 
@@ -30,8 +31,14 @@ export const Candidates = () => {
     fetchAllCandidates();
   }, []);
 
-  const fetchAllCandidates = async () => {
-    setLoading(true);
+  const fetchAllCandidates = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    
     try {
       const response = await api.get('/api/candidates', {
         params: {
@@ -43,9 +50,15 @@ export const Candidates = () => {
       setAllCandidates(response.data.candidates);
     } catch (error) {
       console.error('Erreur lors du chargement des candidats', error);
+      setError('Impossible de charger les candidats. Veuillez réessayer.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchAllCandidates(true);
   };
 
   const filteredCandidates = useMemo(() => {
@@ -254,18 +267,60 @@ export const Candidates = () => {
             </div>
           )}
           
-          <div className="mt-4 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-            {filteredCandidates.length} candidat{filteredCandidates.length !== 1 ? 's' : ''} trouvé{filteredCandidates.length !== 1 ? 's' : ''}
-            {activeFilterCount > 0 && (
-              <button
-                onClick={resetFilters}
-                className="ml-2 text-blue-500 hover:text-blue-600"
-              >
-                (effacer les filtres)
-              </button>
-            )}
+          <div className="mt-4 flex justify-between items-center">
+            <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+              {filteredCandidates.length} candidat{filteredCandidates.length !== 1 ? 's' : ''} trouvé{filteredCandidates.length !== 1 ? 's' : ''}
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={resetFilters}
+                  className="ml-2 text-blue-500 hover:text-blue-600"
+                >
+                  (effacer les filtres)
+                </button>
+              )}
+            </div>
+            
+            {/* Bouton de rafraîchissement avec LoadingSpinner */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-3 py-1 text-sm
+                       text-light-text-secondary dark:text-dark-text-secondary
+                       hover:text-light-text dark:hover:text-dark-text
+                       transition-colors"
+              aria-label="Rafraîchir la liste"
+            >
+              {refreshing ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span>Rafraîchissement...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Rafraîchir</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Message d'erreur */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800
+                        rounded-md text-red-600 dark:text-red-400 flex items-start gap-2">
+            <span>{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-red-600 dark:text-red-400 hover:text-red-800"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Liste des candidats */}
         {paginatedCandidates.length === 0 ? (

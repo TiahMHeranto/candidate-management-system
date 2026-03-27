@@ -12,6 +12,8 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@jest/types": "^30.3.0",
+    "@prisma/client": "^7.5.0",
     "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",

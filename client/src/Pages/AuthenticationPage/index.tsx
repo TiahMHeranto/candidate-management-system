@@ -57,10 +57,10 @@ export const Login = () => {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
     if (isLoading) return;
-    
+
     setIsLoading(true);
     setServerError(null);
 
@@ -81,13 +81,13 @@ export const Login = () => {
 
       const { token } = response.data;
       localStorage.setItem('authToken', token);
-      
+
       // Redirection
       window.location.href = '/candidates';
-      
+
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponse>;
-      
+
       // Gestion des erreurs avec les messages du serveur
       if (axiosError.code === 'ECONNABORTED') {
         setServerError('Le serveur ne répond pas. Veuillez réessayer.');
@@ -113,7 +113,7 @@ export const Login = () => {
       } else {
         setServerError('Une erreur est survenue. Veuillez réessayer.');
       }
-      
+
       // Log pour débogage
       console.error('Login error:', {
         status: axiosError.response?.status,
@@ -131,7 +131,7 @@ export const Login = () => {
         <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary 
                         border border-light-border dark:border-dark-border
                         rounded-lg shadow-lg p-8">
-          
+
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-light-text dark:text-dark-text">
               Connexion
@@ -172,10 +172,10 @@ export const Login = () => {
                              text-light-text dark:text-dark-text
                              focus:outline-none focus:ring-2 focus:ring-gray-400
                              disabled:opacity-50 disabled:cursor-not-allowed
-                             ${errors.email 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                             ${errors.email
+                      ? 'border-red-500 dark:border-red-500'
+                      : 'border-light-border dark:border-dark-border'
+                    }`}
                 />
               </div>
               {errors.email && (
@@ -206,16 +206,15 @@ export const Login = () => {
                              text-light-text dark:text-dark-text
                              focus:outline-none focus:ring-2 focus:ring-gray-400
                              disabled:opacity-50 disabled:cursor-not-allowed
-                             ${errors.password 
-                               ? 'border-red-500 dark:border-red-500' 
-                               : 'border-light-border dark:border-dark-border'
-                             }`}
+                             ${errors.password
+                      ? 'border-red-500 dark:border-red-500'
+                      : 'border-light-border dark:border-dark-border'
+                    }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center
-                           text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
