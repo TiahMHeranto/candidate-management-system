@@ -21,3 +21,13 @@ export interface Candidate {
   createdAt: string;
   updatedAt: string;
 }
+
+// src/types/candidate.ts
+export interface CandidateFormData {
+  name: string;
+  email: string;
+  phone: string;
+  position: string;
+  experience: number;
+  skills: string;
+}
