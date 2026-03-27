@@ -1,113 +1,105 @@
-// components/Header.tsx
-import React, { useState, useEffect } from 'react';
-import { Menu, X, Moon, Sun } from 'lucide-react';
+// src/components/Header.tsx
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LogOut, User, ChevronDown, Users } from 'lucide-react';
+import api from '../lib/axios';
+import type { User as UserType } from '../types';
 
-interface HeaderProps {
-  darkMode: boolean;
-  setDarkMode: (value: boolean) => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ darkMode, setDarkMode }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  const navItems = [
-    { label: 'Home', href: '#hero' },
-    { label: 'About', href: '#about' },
-    { label: 'Projects', href: '#projects' },
-    { label: 'Contact', href: '#contact' },
-  ];
+export const Header = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [user, setUser] = useState<UserType | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    fetchProfile();
   }, []);
 
-  const handleClick = (href: string) => {
-    setIsMenuOpen(false);
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get('/api/auth/profile');
+      setUser(response.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement du profil', error);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    navigate('/');
+  };
+
+  const getPageTitle = () => {
+    switch (location.pathname) {
+      case '/candidates':
+        return 'Liste des candidats';
+      case '/candidates/detail':
+        return 'Détail du candidat';
+      default:
+        return 'Gestion des candidats';
     }
   };
 
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-light-bg/90 dark:bg-dark-bg/90 backdrop-blur-md shadow-lg' : 'bg-transparent'
-    }`}>
+    <header className="bg-light-bg-secondary dark:bg-dark-bg-secondary border-b border-light-border dark:border-dark-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex-shrink-0">
-            <a href="#hero" onClick={() => handleClick('#hero')} className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-              TiahM
-            </a>
+          {/* Logo et titre */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-8 w-8 text-gray-900 dark:text-gray-100" />
+              <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                Candidats
+              </span>
+            </div>
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-700" />
+            <h1 className="text-lg font-medium text-gray-700 dark:text-gray-300">
+              {getPageTitle()}
+            </h1>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleClick(item.href);
-                }}
-                className="text-light-text dark:text-dark-text hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200 font-medium"
-              >
-                {item.label}
-              </a>
-            ))}
+          {/* Profile et logout */}
+          <div className="relative">
             <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg bg-light-secondary dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-              aria-label="Toggle dark mode"
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
             >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {user?.email || 'Chargement...'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                  {user?.role || 'user'}
+                </p>
+              </div>
+              <ChevronDown className="h-4 w-4 text-gray-500" />
             </button>
-          </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center space-x-4">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg bg-light-secondary dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 rounded-lg bg-light-secondary dark:bg-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            {showDropdown && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowDropdown(false)}
+                />
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-light-bg-secondary dark:bg-dark-bg-secondary border border-light-border dark:border-dark-border z-20">
+                  <div className="py-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Déconnexion
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden absolute top-16 left-0 right-0 bg-light-bg dark:bg-dark-bg shadow-lg py-4 px-4">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleClick(item.href);
-                }}
-                className="block py-2 text-light-text dark:text-dark-text hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200 font-medium"
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
-        )}
       </div>
     </header>
   );
 };
-
-export default Header;

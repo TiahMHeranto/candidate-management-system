@@ -1,38 +1,23 @@
-// types/index.ts
-export interface NavItem {
-  label: string;
-  href: string;
-}
-
-export interface Project {
-  id: number;
-  title: string;
-  description: string;
-  technologies: string[];
-  image?: string;
-  githubUrl?: string;
-  liveUrl?: string;
-  category: string;
-  featured: boolean;
-}
-
-export interface SkillCategory {
-  name: string;
-  icon: string;
-  skills: string[];
-}
-
-export interface Experience {
-  id: number;
-  company: string;
+// src/types/index.ts
+export interface User {
+  _id: string;
+  email: string;
   role: string;
-  period: string;
-  description: string[];
-  technologies: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface SocialLink {
-  platform: string;
-  url: string;
-  icon: string;
+export interface Candidate {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  position: string;
+  experience: number;
+  skills: string[];
+  status: 'pending' | 'validated';
+  isDeleted: boolean;
+  deletedAt?: Date;
+  createdAt: string;
+  updatedAt: string;
 }

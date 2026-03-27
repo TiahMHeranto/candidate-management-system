@@ -3,6 +3,10 @@ import { useState } from 'react';
 import axios, { AxiosError } from 'axios';
 import { Eye, EyeOff, AlertCircle, Lock, Mail } from 'lucide-react';
 
+interface ErrorResponse {
+  message: string;
+}
+
 export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -45,6 +49,10 @@ export const Login = () => {
     if (errors[name as keyof typeof errors]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+    // Effacer l'erreur serveur quand l'utilisateur tape
+    if (serverError) {
+      setServerError(null);
+    }
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -78,17 +86,40 @@ export const Login = () => {
       window.location.href = '/candidates';
       
     } catch (error) {
-      const axiosError = error as AxiosError;
+      const axiosError = error as AxiosError<ErrorResponse>;
       
+      // Gestion des erreurs avec les messages du serveur
       if (axiosError.code === 'ECONNABORTED') {
         setServerError('Le serveur ne répond pas. Veuillez réessayer.');
       } else if (axiosError.response?.status === 401) {
-        setServerError('Email ou mot de passe incorrect');
+        // Utiliser le message du serveur pour 401
+        const serverMessage = axiosError.response.data?.message;
+        if (serverMessage) {
+          setServerError(serverMessage);
+        } else {
+          setServerError('Email ou mot de passe incorrect');
+        }
+      } else if (axiosError.response?.status === 404) {
+        // Utiliser le message du serveur pour 404
+        const serverMessage = axiosError.response.data?.message;
+        setServerError(serverMessage || 'Aucun compte associé à cet email');
       } else if (axiosError.response?.status === 429) {
         setServerError('Trop de tentatives. Veuillez réessayer plus tard.');
+      } else if (axiosError.response?.status === 500) {
+        setServerError('Erreur serveur. Veuillez réessayer plus tard.');
+      } else if (axiosError.response?.data?.message) {
+        // Pour toute autre erreur avec message du serveur
+        setServerError(axiosError.response.data.message);
       } else {
         setServerError('Une erreur est survenue. Veuillez réessayer.');
       }
+      
+      // Log pour débogage
+      console.error('Login error:', {
+        status: axiosError.response?.status,
+        message: axiosError.response?.data?.message,
+        error: axiosError.message
+      });
     } finally {
       setIsLoading(false);
     }
