@@ -2,13 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# 1. Copier uniquement package files
 COPY package*.json ./
 
-RUN npm install
+# 2. Clean install (IMPORTANT)
+RUN npm ci
 
+# 3. Copier le reste du code
 COPY . .
 
-RUN npx tsc
+# 4. Vérifier TypeScript localement
+RUN ls -la node_modules/.bin
+
+# 5. Build avec accès direct au binaire
+RUN ./node_modules/.bin/tsc
 
 EXPOSE 5000
 
