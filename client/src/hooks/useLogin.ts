@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import { validateLoginForm } from '../utils/validation';
 import { getLoginErrorMessage } from '../utils/errorHandler';
+import api from '../lib/axios'; // Import your configured axios instance
 
 interface ErrorResponse {
   message: string;
@@ -29,8 +30,7 @@ export const useLogin = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Vérifier si déjà en chargement
-    if (isLoading) return;  // <-- Cette ligne doit être AVANT la validation
+    if (isLoading) return;
 
     const { isValid, errors: validationErrors } = validateLoginForm(
       formData.email,
@@ -46,19 +46,11 @@ export const useLogin = () => {
     setServerError(null);
 
     try {
-      const response = await axios.post(
-        'http://localhost:3000/api/auth/login',
-        {
-          email: formData.email.toLowerCase().trim(),
-          password: formData.password,
-        },
-        {
-          timeout: 10000,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Use the configured api instance instead of axios directly
+      const response = await api.post('/auth/login', {
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+      });
 
       const { token } = response.data;
       localStorage.setItem('authToken', token);

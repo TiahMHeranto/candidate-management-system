@@ -9,16 +9,16 @@ import { CandidateEdit } from "../Pages/CandidateEdit";
 // Protection des routes
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('authToken');
-  return token ? children : <Navigate to="/" replace />;
+  return token ? children : <Navigate to="/login" replace />;
 };
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route
-          path="/candidates"
+          path="/"
           element={
             <PrivateRoute>
               <Candidates />
