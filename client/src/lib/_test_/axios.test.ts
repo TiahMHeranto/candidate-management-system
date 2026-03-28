@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import api from "./axios";
+import api from "../axios";
 
 describe("Axios instance", () => {
   beforeEach(() => {
