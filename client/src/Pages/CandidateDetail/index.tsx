@@ -178,7 +178,7 @@ export const CandidateDetail = () => {
           <AlertCircle className="h-14 w-14 text-red-500 mx-auto mb-3" />
           <p className="text-lg">Candidat introuvable</p>
           <button
-            onClick={() => navigate('/candidates')}
+            onClick={() => navigate('/')}
             className="mt-4 px-4 py-2 bg-black text-white rounded"
           >
             Retour
@@ -204,7 +204,7 @@ export const CandidateDetail = () => {
 
         {/* BACK */}
         <button
-          onClick={() => navigate('/candidates')}
+          onClick={() => navigate('/')}
           className="flex items-center gap-2 mb-5 text-gray-500 hover:text-black"
         >
           <ArrowLeft size={18} />
