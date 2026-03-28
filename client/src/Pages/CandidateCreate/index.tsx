@@ -84,7 +84,7 @@ export const CandidateCreate = () => {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button
-          onClick={() => navigate('/candidates')}
+          onClick={() => navigate('/')}
           className="mb-6 flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary
                    hover:text-light-text dark:hover:text-dark-text transition-colors"
         >
@@ -216,7 +216,7 @@ export const CandidateCreate = () => {
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
-                onClick={() => navigate('/candidates')}
+                onClick={() => navigate('/')}
                 className="px-4 py-2 border rounded-md"
               >
                 Annuler

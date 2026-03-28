@@ -69,7 +69,7 @@ export const useCandidateCreate = () => {
   };
 
   const goBack = () => {
-    navigate('/candidates');
+    navigate('/');
   };
 
   return {
