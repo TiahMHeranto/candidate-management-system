@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AxiosError } from 'axios';
 import { validateLoginForm } from '../utils/validation';
 import { getLoginErrorMessage } from '../utils/errorHandler';
-import api from '../lib/axios'; // Import your configured axios instance
+import api from '../lib/axios';
 
 interface ErrorResponse {
   message: string;
@@ -47,7 +47,7 @@ export const useLogin = () => {
 
     try {
       // Use the configured api instance instead of axios directly
-      const response = await api.post('/auth/login', {
+      const response = await api.post('/api/auth/login', {
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
       });
