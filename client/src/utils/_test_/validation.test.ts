@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateLoginForm } from './validation';
+import { validateLoginForm } from '../validation';
 
 describe('validateLoginForm', () => {
   it('should return error when email is empty', () => {

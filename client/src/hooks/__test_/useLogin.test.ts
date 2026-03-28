@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import axios from 'axios';
-import { useLogin } from './useLogin';
+import { useLogin } from '../useLogin';
 
 // Mock axios
 vi.mock('axios');

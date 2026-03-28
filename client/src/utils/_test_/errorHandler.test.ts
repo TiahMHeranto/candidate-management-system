@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AxiosError } from 'axios';
-import { getLoginErrorMessage } from './errorHandler';
+import { getLoginErrorMessage } from '../errorHandler';
 
 // Définir le type ErrorResponse pour les tests
 interface ErrorResponse {
