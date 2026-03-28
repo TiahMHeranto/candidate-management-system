@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, User, ChevronDown, Users } from 'lucide-react';
-import api from '../lib/axios';
-import type { User as UserType } from '../types';
+import api from '../../lib/axios';
+import type { User as UserType } from '../../types';
 
 export const Header = () => {
   const navigate = useNavigate();

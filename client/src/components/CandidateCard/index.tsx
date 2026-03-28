@@ -1,8 +1,8 @@
 // src/components/CandidateCard.tsx
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Mail, Phone, Star, Edit2, Trash2 } from 'lucide-react';
-import type { Candidate } from '../types';
-import api from '../lib/axios';
+import type { Candidate } from '../../types';
+import api from '../../lib/axios';
 
 interface CandidateCardProps {
   candidate: Candidate;
