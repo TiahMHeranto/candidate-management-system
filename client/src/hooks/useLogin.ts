@@ -54,7 +54,7 @@ export const useLogin = () => {
 
       const { token } = response.data;
       localStorage.setItem('authToken', token);
-      window.location.href = '/candidates';
+      window.location.href = '/';
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponse>;
       const errorMessage = getLoginErrorMessage(axiosError);
