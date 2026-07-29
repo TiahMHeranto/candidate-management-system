@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Eye, EyeOff, AlertCircle, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Lock, Mail, WifiOff } from 'lucide-react';
 import { useLogin } from '../../hooks/useLogin';
+import { useOffline } from '../../hooks/useOffline';
 
 export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { formData, errors, serverError, isLoading, handleChange, onSubmit } = useLogin();
+  const { isOffline } = useOffline();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-light-bg dark:bg-dark-bg p-4">
@@ -21,6 +23,18 @@ export const Login = () => {
               Connectez-vous à votre compte
             </p>
           </div>
+
+          {isOffline && (
+            <div className="mb-4 p-3 rounded-md bg-amber-50 border border-amber-200
+                            flex items-start gap-2 text-amber-800 text-sm">
+              <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                <strong>Mode hors-ligne</strong> — Le serveur est inaccessible.
+                Connectez-vous avec n'importe quelles identifiants pour continuer en mode démo.
+                Les données ne seront pas sauvegardées.
+              </span>
+            </div>
+          )}
 
           {serverError && (
             <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-900/20 

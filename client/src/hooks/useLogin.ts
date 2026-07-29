@@ -3,6 +3,7 @@ import { AxiosError } from 'axios';
 import { validateLoginForm } from '../utils/validation';
 import { getLoginErrorMessage } from '../utils/errorHandler';
 import api from '../lib/axios';
+import { getIsOffline } from './useOffline';
 
 interface ErrorResponse {
   message: string;
@@ -46,7 +47,6 @@ export const useLogin = () => {
     setServerError(null);
 
     try {
-      // Use the configured api instance instead of axios directly
       const response = await api.post('/api/auth/login', {
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
@@ -54,6 +54,14 @@ export const useLogin = () => {
 
       const { token } = response.data;
       localStorage.setItem('authToken', token);
+
+      // In offline mode the token is a fake — remind the user
+      if (getIsOffline()) {
+        localStorage.setItem('offlineMode', 'true');
+      } else {
+        localStorage.removeItem('offlineMode');
+      }
+
       window.location.href = '/';
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponse>;
