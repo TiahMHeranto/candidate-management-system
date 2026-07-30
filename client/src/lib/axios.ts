@@ -161,23 +161,26 @@ async function handleOfflineRequest(config: AxiosRequestConfig): Promise<AxiosRe
 
 const originalRequest = api.request.bind(api);
 
-api.request = async function <T = any>(config: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+const requestWithOfflineFallback = async <T = any, R = AxiosResponse<T>, D = any>(
+  config: AxiosRequestConfig<D>
+): Promise<R> => {
   if (getIsOffline()) {
-    return handleOfflineRequest(config) as Promise<AxiosResponse<T>>;
+    return handleOfflineRequest(config) as Promise<R>;
   }
 
   try {
-    const response = await originalRequest<T>(config);
-    return response;
+    return (await originalRequest<T, R, D>(config)) as R;
   } catch (error: any) {
     // Network error (no response) → switch to offline mode and retry locally
     if (!error.response) {
       markOffline();
-      return handleOfflineRequest(config) as Promise<AxiosResponse<T>>;
+      return handleOfflineRequest(config) as Promise<R>;
     }
     throw error;
   }
 };
+
+api.request = requestWithOfflineFallback as typeof api.request;
 
 // Proxy the convenience methods through api.request so the override applies
 const makeMethod =
