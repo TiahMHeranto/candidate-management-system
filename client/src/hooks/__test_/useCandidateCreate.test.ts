@@ -74,6 +74,6 @@ describe('useCandidateCreate', () => {
       result.current.goBack();
     });
 
-    expect(mockedNavigate).toHaveBeenCalledWith('/');
+    expect(mockedNavigate).toHaveBeenCalledWith('/candidates');
   });
 });

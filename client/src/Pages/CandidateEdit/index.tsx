@@ -1,4 +1,3 @@
-// src/pages/CandidateEdit.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -10,10 +9,14 @@ import {
   Mail,
   Phone,
   Briefcase,
-  Calendar
+  Calendar,
+  Code2,
 } from 'lucide-react';
 import api from '../../lib/axios';
 import { Header } from '../../components/Header';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { useCandidateValidationRules } from '../../hooks/useCandidateValidationRules';
+import { getIsOffline } from '../../hooks/useOffline';
 
 interface CandidateFormData {
   name: string;
@@ -27,15 +30,17 @@ interface CandidateFormData {
 export const CandidateEdit = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const rules = useCandidateValidationRules();
 
   const [loading, setLoading] = useState(true);
+  const [candidateName, setCandidateName] = useState('');
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     setError,
     reset,
   } = useForm<CandidateFormData>({
@@ -54,10 +59,14 @@ export const CandidateEdit = () => {
   }, [id]);
 
   const fetchCandidate = async () => {
+    setLoading(true);
+    setServerError(null);
+
     try {
       const response = await api.get(`/api/candidates/${id}`);
       const candidate = response.data;
 
+      setCandidateName(candidate.name || '');
       reset({
         name: candidate.name || '',
         email: candidate.email || '',
@@ -66,8 +75,8 @@ export const CandidateEdit = () => {
         experience: candidate.experience || 0,
         skills: candidate.skills?.join(', ') || '',
       });
-    } catch (error) {
-      setServerError("Impossible de charger le candidat");
+    } catch {
+      setServerError('Impossible de charger le candidat');
     } finally {
       setLoading(false);
     }
@@ -80,7 +89,7 @@ export const CandidateEdit = () => {
     try {
       const skillsArray = data.skills
         .split(',')
-        .map(s => s.trim())
+        .map((s) => s.trim())
         .filter(Boolean);
 
       await api.put(`/api/candidates/${id}`, {
@@ -93,147 +102,201 @@ export const CandidateEdit = () => {
     } catch (error: any) {
       const msg = error.response?.data?.message;
 
-      if (msg?.includes('email')) setError('email', { message: msg });
-      else if (msg?.includes('phone')) setError('phone', { message: msg });
-      else if (msg?.includes('compétence')) setError('skills', { message: msg });
-      else setServerError(msg || "Erreur serveur");
+      if (msg?.toLowerCase().includes('email')) {
+        setError('email', { message: msg });
+      } else if (msg?.toLowerCase().includes('phone') || msg?.includes('téléphone')) {
+        setError('phone', { message: msg });
+      } else if (msg?.includes('compétence')) {
+        setError('skills', { message: msg });
+      } else {
+        setServerError(msg || 'Erreur lors de la mise à jour');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /* ================= LOADING ================= */
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black">
+      <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
         <Header />
-        <div className="flex items-center justify-center h-72">
-          <div className="w-6 h-6 border border-black border-t-transparent rounded-full animate-spin" />
+        <div className="flex items-center justify-center h-96">
+          <LoadingSpinner size="lg" message="Chargement du profil..." />
         </div>
       </div>
     );
   }
 
-  /* ================= UI ================= */
-
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg">
       <Header />
 
-      <main className="max-w-3xl mx-auto px-6 py-12">
-
-        {/* BACK */}
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 animate-fade-in">
         <button
           onClick={() => navigate(`/candidates/${id}`)}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition mb-8"
+          className="mb-8 flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text transition"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour
+          Retour au profil
         </button>
 
-        {/* CARD */}
-        <div className="border border-black/10 rounded-2xl bg-white shadow-sm overflow-hidden">
+        {/* Page intro */}
+        <section className="mb-8">
+          <p className="font-brand text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            TiahMHeranto Company
+          </p>
+          <h1 className="font-brand mt-2 text-3xl font-extrabold tracking-tight text-light-text dark:text-dark-text">
+            Modifier le candidat
+          </h1>
+          <p className="mt-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+            {candidateName
+              ? `Mise à jour du profil de ${candidateName}`
+              : 'Mettre à jour les informations du profil'}
+            {getIsOffline() && (
+              <span className="ml-2 text-amber-700">· Mode hors-ligne</span>
+            )}
+          </p>
+        </section>
 
-          {/* HEADER */}
-          <div className="p-6 border-b border-black/10">
-            <h1 className="text-xl font-semibold tracking-tight">
-              Modifier le candidat
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Mettre à jour les informations du profil
-            </p>
-          </div>
-
-          {/* ERROR */}
+        <div className="rounded-2xl border border-light-border dark:border-dark-border bg-light-bg-secondary dark:bg-dark-bg-secondary overflow-hidden">
           {serverError && (
-            <div className="mx-6 mt-6 p-3 border border-black/10 bg-gray-50 rounded-lg flex gap-2 text-sm">
-              <AlertCircle className="w-4 h-4 mt-0.5" />
+            <div className="m-6 mb-0 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-start gap-2 text-sm">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{serverError}</span>
             </div>
           )}
 
-          {/* FORM */}
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="p-6 sm:p-8 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <Field
+                label="Nom complet"
+                htmlFor="name"
+                error={errors.name?.message}
+                className="sm:col-span-2"
+              >
+                <Input
+                  id="name"
+                  icon={<User className="w-4 h-4" />}
+                  error={!!errors.name}
+                  placeholder="Alice Martin"
+                  {...register('name', rules.nameRules)}
+                />
+              </Field>
 
-            {/* INPUT COMPONENT STYLE REPEAT */}
+              <Field label="Email" htmlFor="email" error={errors.email?.message}>
+                <Input
+                  id="email"
+                  type="email"
+                  icon={<Mail className="w-4 h-4" />}
+                  error={!!errors.email}
+                  placeholder="alice@example.com"
+                  {...register('email', rules.emailRules)}
+                />
+              </Field>
 
-            {/* NAME */}
-            <Field label="Nom complet" error={errors.name?.message}>
-              <Input icon={<User />} error={!!errors.name} {...register('name', {
-                required: 'Nom requis',
-                minLength: { value: 2, message: 'Min 2 caractères' }
-              })} />
-            </Field>
+              <Field
+                label="Téléphone"
+                htmlFor="phone"
+                error={errors.phone?.message}
+              >
+                <Input
+                  id="phone"
+                  icon={<Phone className="w-4 h-4" />}
+                  error={!!errors.phone}
+                  placeholder="+33 6 12 34 56 78"
+                  {...register('phone', rules.phoneRules)}
+                />
+              </Field>
 
-            {/* EMAIL */}
-            <Field label="Email" error={errors.email?.message}>
-              <Input icon={<Mail />} error={!!errors.email} {...register('email', {
-                required: 'Email requis',
-                pattern: { value: /^\S+@\S+$/, message: 'Email invalide' }
-              })} />
-            </Field>
+              <Field
+                label="Poste"
+                htmlFor="position"
+                error={errors.position?.message}
+              >
+                <Input
+                  id="position"
+                  icon={<Briefcase className="w-4 h-4" />}
+                  error={!!errors.position}
+                  placeholder="Développeuse Frontend"
+                  {...register('position', rules.positionRules)}
+                />
+              </Field>
 
-            {/* PHONE */}
-            <Field label="Téléphone" error={errors.phone?.message}>
-              <Input icon={<Phone />} error={!!errors.phone} {...register('phone')} />
-            </Field>
+              <Field
+                label="Expérience (années)"
+                htmlFor="experience"
+                error={errors.experience?.message}
+              >
+                <Input
+                  id="experience"
+                  type="number"
+                  min={0}
+                  max={50}
+                  icon={<Calendar className="w-4 h-4" />}
+                  error={!!errors.experience}
+                  {...register('experience', rules.experienceRules)}
+                />
+              </Field>
 
-            {/* POSITION */}
-            <Field label="Poste" error={errors.position?.message}>
-              <Input icon={<Briefcase />} error={!!errors.position} {...register('position')} />
-            </Field>
+              <Field
+                label="Compétences"
+                htmlFor="skills"
+                error={errors.skills?.message}
+                hint="Séparez les compétences par des virgules"
+                className="sm:col-span-2"
+              >
+                <div className="relative">
+                  <div className="absolute left-3 top-3 text-slate-400 pointer-events-none">
+                    <Code2 className="w-4 h-4" />
+                  </div>
+                  <textarea
+                    id="skills"
+                    rows={3}
+                    placeholder="React, TypeScript, Node.js"
+                    {...register('skills', rules.skillsRules)}
+                    className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm bg-white dark:bg-slate-900
+                      text-light-text dark:text-dark-text resize-none
+                      focus:outline-none focus:ring-2 focus:ring-slate-400
+                      ${
+                        errors.skills
+                          ? 'border-red-400'
+                          : 'border-light-border dark:border-dark-border'
+                      }`}
+                  />
+                </div>
+              </Field>
+            </div>
 
-            {/* EXPERIENCE */}
-            <Field label="Expérience (années)" error={errors.experience?.message}>
-              <Input icon={<Calendar />} type="number" error={!!errors.experience} {...register('experience')} />
-            </Field>
-
-            {/* SKILLS */}
-            <Field label="Compétences" error={errors.skills?.message}>
-              <textarea
-                {...register('skills')}
-                rows={3}
-                placeholder="React, TypeScript, Node.js"
-                className="w-full pl-10 pr-3 py-2 border border-black/10 rounded-lg
-                         focus:outline-none focus:ring-1 focus:ring-black
-                         resize-none"
-              />
-            </Field>
-
-            {/* ACTIONS */}
-            <div className="flex gap-3 pt-4">
-
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2 border-t border-light-border dark:border-dark-border">
               <button
                 type="button"
                 onClick={() => navigate(`/candidates/${id}`)}
-                className="px-4 py-2 border border-black/10 rounded-lg text-sm
-                         hover:bg-black hover:text-white transition"
+                className="px-4 py-2.5 rounded-lg border border-light-border dark:border-dark-border text-sm
+                         hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition"
               >
                 Annuler
               </button>
 
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-black text-white rounded-lg text-sm
-                         hover:bg-gray-900 transition flex items-center justify-center gap-2"
+                disabled={isSubmitting || !isDirty}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-medium
+                         hover:bg-slate-800 transition flex items-center justify-center gap-2
+                         disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
-                    <span className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
-                    Sauvegarde...
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Enregistrement...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Sauvegarder
+                    Enregistrer les modifications
                   </>
                 )}
               </button>
-
             </div>
-
           </form>
         </div>
       </main>
@@ -241,26 +304,59 @@ export const CandidateEdit = () => {
   );
 };
 
-/* ================= COMPONENTS ================= */
-
-const Field = ({ label, error, children }: any) => (
-  <div className="space-y-1">
-    <label className="text-sm text-gray-600">{label}</label>
+const Field = ({
+  label,
+  htmlFor,
+  error,
+  hint,
+  className = '',
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  error?: string;
+  hint?: string;
+  className?: string;
+  children: React.ReactNode;
+}) => (
+  <div className={`space-y-1.5 ${className}`}>
+    <label
+      htmlFor={htmlFor}
+      className="block text-sm font-medium text-light-text dark:text-dark-text"
+    >
+      {label}
+    </label>
     {children}
-    {error && <p className="text-xs text-black">{error}</p>}
+    {hint && !error && (
+      <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+        {hint}
+      </p>
+    )}
+    {error && <p className="text-xs text-red-600">{error}</p>}
   </div>
 );
 
-const Input = ({ icon, error, ...props }: any) => (
+const Input = ({
+  icon,
+  error,
+  className = '',
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  icon: React.ReactNode;
+  error?: boolean;
+}) => (
   <div className="relative">
-    <div className="absolute left-3 top-2.5 text-gray-400 w-4 h-4">
+    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
       {icon}
     </div>
     <input
       {...props}
-      className={`w-full pl-10 pr-3 py-2 border rounded-lg text-sm
-        ${error ? 'border-black' : 'border-black/10'}
-        focus:outline-none focus:ring-1 focus:ring-black`}
+      className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm bg-white dark:bg-slate-900
+        text-light-text dark:text-dark-text
+        focus:outline-none focus:ring-2 focus:ring-slate-400
+        disabled:opacity-50
+        ${error ? 'border-red-400' : 'border-light-border dark:border-dark-border'}
+        ${className}`}
     />
   </div>
 );

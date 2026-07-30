@@ -10,16 +10,34 @@ export const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-light-bg dark:bg-dark-bg p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-fade-in">
         <div className="bg-light-bg-secondary dark:bg-dark-bg-secondary 
                         border border-light-border dark:border-dark-border
                         rounded-lg shadow-lg p-8">
 
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-light-text dark:text-dark-text">
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <img
+                src="/TiahMHeranto.png"
+                alt="TiahMHeranto Company"
+                className="h-14 w-14"
+                width={56}
+                height={56}
+              />
+              <div>
+                <p className="font-brand text-2xl sm:text-3xl font-extrabold tracking-tight text-light-text dark:text-dark-text leading-none">
+                  TiahMHeranto
+                </p>
+                <p className="font-brand mt-1 text-xs sm:text-sm font-semibold uppercase tracking-[0.22em] text-light-text-secondary dark:text-dark-text-secondary">
+                  Company
+                </p>
+              </div>
+            </div>
+
+            <h1 className="text-lg font-semibold text-light-text dark:text-dark-text">
               Connexion
             </h1>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary mt-2">
+            <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1 text-sm">
               Connectez-vous à votre compte
             </p>
           </div>
