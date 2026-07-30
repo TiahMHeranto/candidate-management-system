@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import type { MutableRefObject } from 'react';
 import { useFocusTrap } from '../useFocusTrap';
 
 describe('useFocusTrap', () => {
@@ -13,7 +14,7 @@ describe('useFocusTrap', () => {
     button1 = document.createElement('button');
     button2 = document.createElement('button');
     input = document.createElement('input');
-    
+
     container.appendChild(button1);
     container.appendChild(input);
     container.appendChild(button2);
@@ -31,24 +32,32 @@ describe('useFocusTrap', () => {
 
   it('should focus first focusable element when active', () => {
     const focusSpy = vi.spyOn(button1, 'focus');
-    
-    renderHook(() => useFocusTrap(true));
-    
-    // Simuler l'effet
+
+    const { result, rerender } = renderHook(
+      ({ active }) => useFocusTrap(active),
+      { initialProps: { active: false } }
+    );
+
     act(() => {
-      const event = new Event('DOMContentLoaded');
-      document.dispatchEvent(event);
+      (result.current as MutableRefObject<HTMLDivElement | null>).current =
+        container;
     });
-    
-    // Le focus devrait être sur le premier élément focusable
+
+    rerender({ active: true });
+
     expect(focusSpy).toHaveBeenCalled();
   });
 
   it('should not focus when inactive', () => {
     const focusSpy = vi.spyOn(button1, 'focus');
-    
-    renderHook(() => useFocusTrap(false));
-    
+
+    const { result } = renderHook(() => useFocusTrap(false));
+
+    act(() => {
+      (result.current as MutableRefObject<HTMLDivElement | null>).current =
+        container;
+    });
+
     expect(focusSpy).not.toHaveBeenCalled();
   });
 });
