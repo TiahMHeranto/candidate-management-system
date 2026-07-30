@@ -1,128 +1,159 @@
-// src/components/CandidateCard.tsx
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Mail, Phone, Star, Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Eye } from 'lucide-react';
 import type { Candidate } from '../../types';
 import api from '../../lib/axios';
 
 interface CandidateCardProps {
   candidate: Candidate;
-  onDelete?: (id: string) => void; // Callback optionnel pour rafraîchir la liste après suppression
+  view?: 'list' | 'grid';
+  onDelete?: (id: string) => void;
 }
 
-export const CandidateCard = ({ candidate, onDelete }: CandidateCardProps) => {
+export const CandidateCard = ({
+  candidate,
+  view = 'list',
+  onDelete,
+}: CandidateCardProps) => {
   const navigate = useNavigate();
 
-  const getStatusColor = (status: string) => {
-    return status === 'validated'
-      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-      : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400';
-  };
+  const statusLabel = candidate.status === 'validated' ? 'Validé' : 'En attente';
+  const statusClass =
+    candidate.status === 'validated'
+      ? 'bg-emerald-100 text-emerald-800'
+      : 'bg-amber-100 text-amber-800';
 
   const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Empêche la navigation vers le détail
+    e.stopPropagation();
     navigate(`/candidates/${candidate._id}/edit`);
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Empêche la navigation vers le détail
-    
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${candidate.name} ?`)) return;
-    
+    e.stopPropagation();
+    if (!confirm(`Supprimer ${candidate.name} ?`)) return;
+
     try {
       await api.delete(`/api/candidates/${candidate._id}`);
-      // Appeler le callback pour rafraîchir la liste si fourni
-      if (onDelete) {
-        onDelete(candidate._id);
-      } else {
-        // Sinon, recharger la page
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la suppression', error);
+      onDelete?.(candidate._id);
+    } catch {
       alert('Erreur lors de la suppression du candidat');
     }
   };
 
-  return (
-    <div className="relative group">
-      {/* Carte principale avec navigation */}
-      <div
-        onClick={() => navigate(`/candidates/${candidate._id}`)}
-        className="bg-light-bg-secondary dark:bg-dark-bg-secondary
-                   border border-light-border dark:border-dark-border
-                   rounded-lg p-6 hover:shadow-lg transition-all duration-200
-                   cursor-pointer hover:scale-[1.02]"
+  const handleOpen = () => navigate(`/candidates/${candidate._id}`);
+
+  const Actions = ({ compact = false }: { compact?: boolean }) => (
+    <div
+      className={`flex items-center gap-1 ${compact ? '' : 'opacity-100'}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        onClick={handleOpen}
+        className="p-2 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+        title="Voir"
+        aria-label={`Voir ${candidate.name}`}
       >
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-semibold text-light-text dark:text-dark-text">
-            {candidate.name}
-          </h3>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(candidate.status)}`}>
-            {candidate.status === 'validated' ? 'Validé' : 'En attente'}
+        <Eye className="h-4 w-4" />
+      </button>
+      <button
+        onClick={handleEdit}
+        className="p-2 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+        title="Modifier"
+        aria-label={`Modifier ${candidate.name}`}
+      >
+        <Edit2 className="h-4 w-4" />
+      </button>
+      <button
+        onClick={handleDelete}
+        className="p-2 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+        title="Supprimer"
+        aria-label={`Supprimer ${candidate.name}`}
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
+
+  if (view === 'grid') {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleOpen}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleOpen();
+          }
+        }}
+        className="rounded-xl border border-light-border dark:border-dark-border
+                   bg-light-bg-secondary dark:bg-dark-bg-secondary p-4
+                   hover:border-slate-400 dark:hover:border-slate-500 transition cursor-pointer
+                   flex flex-col gap-3"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-medium text-light-text dark:text-dark-text truncate">
+              {candidate.name}
+            </h3>
+            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate mt-0.5">
+              {candidate.position}
+            </p>
+          </div>
+          <span className={`shrink-0 text-xs px-2 py-1 rounded-full ${statusClass}`}>
+            {statusLabel}
           </span>
         </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-            <Mail className="h-4 w-4" />
-            <span>{candidate.email}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-            <Phone className="h-4 w-4" />
-            <span>{candidate.phone}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-            <Briefcase className="h-4 w-4" />
-            <span>{candidate.position}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-            <Star className="h-4 w-4" />
-            <span>{candidate.experience} ans d'expérience</span>
-          </div>
-        </div>
-        
-        <div className="mt-4 flex flex-wrap gap-2">
-          {candidate.skills.slice(0, 3).map((skill, index) => (
-            <span
-              key={index}
-              className="px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800
-                         text-gray-600 dark:text-gray-400"
-            >
-              {skill}
-            </span>
-          ))}
-          {candidate.skills.length > 3 && (
-            <span className="px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800
-                           text-gray-600 dark:text-gray-400">
-              +{candidate.skills.length - 3}
-            </span>
-          )}
+
+        <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+          {candidate.experience} ans d’expérience
+        </p>
+
+        <div className="mt-auto pt-2 border-t border-light-border dark:border-dark-border flex justify-end">
+          <Actions compact />
         </div>
       </div>
+    );
+  }
 
-      {/* Boutons d'action (apparaissent au survol) */}
-      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        {/* Bouton Modifier */}
-        <button
-          onClick={handleEdit}
-          className="p-2 bg-orange-500 hover:bg-orange-600
-                   text-white rounded-md shadow-lg
-                   transition-all duration-200 hover:scale-110"
-          title="Modifier"
-        >
-          <Edit2 className="h-4 w-4" />
-        </button>
-        
-        {/* Bouton Supprimer */}
-        <button
-          onClick={handleDelete}
-          className="p-2 bg-red-600 hover:bg-red-700
-                   text-white rounded-md shadow-lg
-                   transition-all duration-200 hover:scale-110"
-          title="Supprimer"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+  // List row
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleOpen();
+        }
+      }}
+      className="grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto_auto_auto]
+                 gap-3 sm:gap-4 items-center px-4 py-3
+                 hover:bg-slate-50 dark:hover:bg-white/[0.03] transition cursor-pointer"
+    >
+      <div className="min-w-0">
+        <p className="font-medium text-light-text dark:text-dark-text truncate">
+          {candidate.name}
+        </p>
+        <p className="sm:hidden text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
+          {candidate.position}
+        </p>
+      </div>
+
+      <p className="hidden sm:block text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
+        {candidate.position}
+      </p>
+
+      <span className={`hidden sm:inline-flex text-xs px-2.5 py-1 rounded-full justify-center ${statusClass}`}>
+        {statusLabel}
+      </span>
+
+      <p className="hidden md:block text-sm text-light-text-secondary dark:text-dark-text-secondary text-right tabular-nums">
+        {candidate.experience} ans
+      </p>
+
+      <div className="justify-self-end">
+        <Actions />
       </div>
     </div>
   );
