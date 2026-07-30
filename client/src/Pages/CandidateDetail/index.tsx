@@ -13,11 +13,9 @@ import {
   AlertCircle,
   Download,
 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-
 import api from '../../lib/axios';
 import type { Candidate } from '../../types';
+import { exportCandidatePdf } from '../../utils/exportCandidatePdf';
 
 import { Header } from '../../components/Header';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
@@ -110,43 +108,16 @@ export const CandidateDetail = () => {
   // EXPORT PDF
   // =========================
   const handleExportPDF = async () => {
-    const element = document.getElementById('candidate-pdf');
-    if (!element) return;
+    if (!candidate) return;
 
     setExporting(true);
+    setError(null);
 
     try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-
-      const pdfWidth = 210;
-      const pdfHeight = 297;
-
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-
-      pdf.save(`candidat-${candidate?.name || 'profil'}.pdf`);
-
+      await exportCandidatePdf(candidate);
       setSuccessMessage('PDF exporté avec succès !');
     } catch (err) {
+      console.error('PDF export failed', err);
       setError("Erreur lors de l'export PDF");
     } finally {
       setExporting(false);
@@ -220,10 +191,7 @@ export const CandidateDetail = () => {
         )}
 
         {/* CARD */}
-        <div
-          id="candidate-pdf"
-          className="bg-white dark:bg-gray-900 rounded-xl shadow border p-6"
-        >
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow border p-6">
           {/* HEADER */}
           <div className="flex justify-between items-start gap-4">
             <div>
